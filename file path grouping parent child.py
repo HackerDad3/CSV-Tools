@@ -11,7 +11,7 @@ def identify_parent_child(df):
     df['Folder_Name'] = df['File Path'].apply(lambda x: os.path.basename(os.path.dirname(x)))
 
     # Identify parents
-    parent_documents = df[df['Filename'].str.replace('.pdf', '').str.replace('.xls', '').str.replace('.xlsx', '') == df['Folder_Name']]
+    parent_documents = df[df['Filename'].str.split('.').str[0] == df['Folder_Name']]
     parent_names = parent_documents['Folder_Name'].unique()
 
     # Create Parent_Child_Status column
