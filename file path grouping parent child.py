@@ -1,4 +1,4 @@
-import pandas as pd # version 2.2.3
+import pandas as pd
 import os
 
 # Load the CSV file
@@ -29,11 +29,14 @@ def identify_parent_child(df):
 # Reorder the DataFrame
 df = identify_parent_child(df)
 
-# Create a sorting key to ensure parents are first and children follow immediately
+# Create a sorting key
+# 1. Parents should come first within their folder group
+# 2. Children should follow immediately after their respective parent
+# 3. Non-parent documents are grouped together at the end
 df['Sort_Key'] = df['Parent_Child_Status'].replace({'Parent': '0', 'Child': '1', 'Non_Parent': '2'})
 
-# Sort the DataFrame so that parents are followed directly by their children, and non-parent documents are grouped
-df.sort_values(by=['Sort_Key', 'Folder_Name'], ascending=[True, True], inplace=True)
+# Sort the DataFrame to ensure correct grouping
+df.sort_values(by=['Folder_Name', 'Sort_Key'], ascending=[True, True], inplace=True)
 
 # Drop the helper columns used for sorting
 df.drop(columns=['Sort_Key'], inplace=True)
