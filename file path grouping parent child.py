@@ -2,10 +2,13 @@ import pandas as pd
 import os
 
 # Load the CSV file
-file_path = r"C:\Users\Willi\Downloads\Annotation Test\Annotation creation\file path test file_Sorted.csv"
+file_path = r"C:\Users\Willi\Downloads\20241113T1037_UTC8_Tranche_4_begin_family.csv"
 df = pd.read_csv(file_path)
 
-# Function to identify parent and child documents based on folder name
+# Ensure that the Begin Family column is treated as a string
+df['Begin Family'] = df['Begin Family'].astype(str)
+
+# Function to identify parent and child documents and copy the parent's Other Bates to Begin Family
 def identify_parent_child(df):
     # Extract the folder name from the file path
     df['Folder_Name'] = df['File Path'].apply(lambda x: os.path.basename(os.path.dirname(x)))
@@ -24,15 +27,20 @@ def identify_parent_child(df):
     # Create Child_Of column
     df['Child_Of'] = df.apply(lambda x: x['Folder_Name'] if x['Parent_Child_Status'] == 'Child' else None, axis=1)
 
+    # Copy parent's Other Bates to Begin Family column for both parent and children
+    for folder_name in parent_names:
+        parent_row = df[(df['Parent_Child_Status'] == 'Parent') & (df['Folder_Name'] == folder_name)]
+        if not parent_row.empty:
+            parent_other_bates = parent_row['Other Bates'].values[0]
+            # Update Begin Family for both parent and its children
+            df.loc[df['Folder_Name'] == folder_name, 'Begin Family'] = str(parent_other_bates)
+
     return df
 
-# Reorder the DataFrame
+# Reorder the DataFrame with the updated parent-child identification
 df = identify_parent_child(df)
 
 # Create a sorting key
-# 1. Parents should come first within their folder group
-# 2. Children should follow immediately after their respective parent
-# 3. Non-parent documents are grouped together at the end
 df['Sort_Key'] = df['Parent_Child_Status'].replace({'Parent': '0', 'Child': '1', 'Non_Parent': '2'})
 
 # Sort the DataFrame to ensure correct grouping
