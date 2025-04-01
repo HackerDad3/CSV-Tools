@@ -10,15 +10,15 @@ def parse_date(value, dayfirst):
     original_value = value
     if isinstance(value, str):
         value = value.strip()
-    # Try parsing with the provided dayfirst
-    dt = pd.to_datetime(value, dayfirst=dayfirst, infer_datetime_format=True, errors='coerce')
+    # Try parsing with the provided dayfirst setting
+    dt = pd.to_datetime(value, dayfirst=dayfirst, errors='coerce')
     if pd.isna(dt):
         # Fallback: try parsing with the opposite interpretation
-        dt_alt = pd.to_datetime(value, dayfirst=not dayfirst, infer_datetime_format=True, errors='coerce')
+        dt_alt = pd.to_datetime(value, dayfirst=not dayfirst, errors='coerce')
         if pd.notna(dt_alt):
             return dt_alt
         else:
-            # If still not parsed, return the original value
+            # If parsing still fails, return the original value
             return original_value
     return dt
 
@@ -45,7 +45,7 @@ def main():
     # Apply the parse_date function to each value in the "Date" column
     def format_date(val):
         parsed = parse_date(val, dayfirst)
-        # Only format if the value is a Timestamp (i.e. parsed successfully)
+        # Only format if the value is a Timestamp (i.e., parsed successfully)
         if isinstance(parsed, pd.Timestamp):
             return parsed.strftime("%d-%b-%Y")
         else:
@@ -53,7 +53,7 @@ def main():
 
     df["Date"] = df["Date"].apply(format_date)
     
-    # Construct the output file path (same directory, same filename with '_Date Coverted' appended)
+    # Construct the output file path: same directory, same filename with '_Date Coverted' appended
     dir_name = os.path.dirname(input_file)
     base_name = os.path.splitext(os.path.basename(input_file))[0]
     output_file = os.path.join(dir_name, f"{base_name}_Date Coverted.csv")
