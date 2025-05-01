@@ -3,67 +3,73 @@ import os
 
 def parse_date(value, dayfirst):
     """
-    Try to parse a date string using the specified dayfirst parameter.
+    Try to parse a date string using the specified dayfirst flag.
     If parsing fails, try with the opposite setting.
     If both attempts fail, return the original value.
     """
     original_value = value
     if isinstance(value, str):
         value = value.strip()
-    # Try parsing with the provided dayfirst setting
     dt = pd.to_datetime(value, dayfirst=dayfirst, errors='coerce')
     if pd.isna(dt):
-        # Fallback: try parsing with the opposite interpretation
         dt_alt = pd.to_datetime(value, dayfirst=not dayfirst, errors='coerce')
         if pd.notna(dt_alt):
             return dt_alt
-        else:
-            # If parsing still fails, return the original value
-            return original_value
+        return original_value
     return dt
 
 def main():
-    # Get the input file path from the user
+    # 1. Get input file
     input_file = input("Enter the input CSV file path: ").strip().strip('"')
-    
-    # Ask user for the date format of the input dates (DMY or MDY)
-    date_format_input = input("Enter the date format of the input dates (enter DMY for day-month-year or MDY for month-day-year): ").strip().upper()
-    dayfirst = True if date_format_input == "DMY" else False
-    
-    # Read the CSV file into a DataFrame
+
+    # 2. Select input date-order
+    print("\nSelect the input date format:")
+    print("  1) Day–Month–Year (DMY)")
+    print("  2) Month–Day–Year (MDY)")
+    choice = input("Enter choice (1 or 2): ").strip()
+    dayfirst = True if choice == "1" else False
+
+    # 3. Select output format
+    print("\nSelect the output date format:")
+    print("  1) dd-MMM-yyyy       e.g. 01-Jan-2025")
+    print("  2) dd-MMM-yyyy hh:mm e.g. 01-Jan-2025 14:30")
+    fmt_choice = input("Enter choice (1 or 2): ").strip()
+    if fmt_choice == "2":
+        out_fmt = "%d-%b-%Y %H:%M"
+    else:
+        out_fmt = "%d-%b-%Y"
+
+    # 4. Read CSV
     try:
         df = pd.read_csv(input_file)
     except Exception as e:
         print(f"Error reading CSV file: {e}")
         return
 
-    # Check if the "Date" column exists
+    # 5. Ensure there's a Date column
     if "Date" not in df.columns:
         print("No 'Date' column found in the CSV file.")
         return
 
-    # Apply the parse_date function to each value in the "Date" column
+    # 6. Apply parsing + formatting
     def format_date(val):
         parsed = parse_date(val, dayfirst)
-        # Only format if the value is a Timestamp (i.e., parsed successfully)
         if isinstance(parsed, pd.Timestamp):
-            return parsed.strftime("%d-%b-%Y")
-        else:
-            return parsed
+            return parsed.strftime(out_fmt)
+        return parsed
 
     df["Date"] = df["Date"].apply(format_date)
-    
-    # Construct the output file path: same directory, same filename with '_Date Coverted' appended
-    dir_name = os.path.dirname(input_file)
-    base_name = os.path.splitext(os.path.basename(input_file))[0]
-    output_file = os.path.join(dir_name, f"{base_name}_Date Coverted.csv")
-    
-    # Write the output CSV
+
+    # 7. Save out
+    dir_name   = os.path.dirname(input_file)
+    base_name  = os.path.splitext(os.path.basename(input_file))[0]
+    output_csv = os.path.join(dir_name, f"{base_name}_Date_Converted.csv")
+
     try:
-        df.to_csv(output_file, index=False)
-        print(f"Converted CSV saved to: {output_file}")
+        df.to_csv(output_csv, index=False)
+        print(f"\n✅ Converted CSV saved to: {output_csv}")
     except Exception as e:
         print(f"Error writing output CSV: {e}")
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
